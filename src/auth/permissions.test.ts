@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest'
+import { hasAnyPermission, type Permission } from './permissions'
+describe('hasAnyPermission', () => { const granted: Permission[] = ['content.read', 'media.read']; it('allows a route with no required permissions', () => { expect(hasAnyPermission(granted, [])).toBe(true) }); it('allows a route when one required permission is granted', () => { expect(hasAnyPermission(granted, ['content.edit', 'content.read'])).toBe(true) }); it('denies a route when no required permission is granted', () => { expect(hasAnyPermission(granted, ['release.build'])).toBe(false) }) })

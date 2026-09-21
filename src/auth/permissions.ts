@@ -1,0 +1,3 @@
+export const permissions = ['content.read', 'content.create', 'content.edit', 'content.review', 'content.archive', 'curriculum.edit', 'media.read', 'media.upload', 'media.assign', 'media.delete', 'release.build', 'release.activate', 'commerce.read', 'commerce.manage', 'users.read', 'users.manage', 'access.read', 'access.grant_support', 'audit.read', 'staff.manage'] as const
+export type Permission = (typeof permissions)[number]
+export function hasAnyPermission(granted: readonly Permission[], required: readonly Permission[]): boolean { return required.length === 0 || required.some((permission) => granted.includes(permission)) }

@@ -1,0 +1,79 @@
+name: Deploy backoffice to staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: lumina-backoffice-staging
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  FIREBASE_PROJECT_ID: lumina-staging-30a8a
+  FIREBASE_SITE_ID: lumina-backoffice-staging
+  API_BASE_URL: https://lumina-api-staging-c7jggwkm3q-ey.a.run.app
+
+jobs:
+  deploy:
+    name: Test, build, and deploy backoffice
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    env:
+      VITE_ENVIRONMENT: TEST
+      VITE_API_BASE_URL: https://lumina-api-staging-c7jggwkm3q-ey.a.run.app
+      VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+      VITE_FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: lumina-staging-30a8a
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Validate public build configuration
+        shell: bash
+        run: |
+          if [[ -z "$VITE_FIREBASE_API_KEY" || -z "$VITE_FIREBASE_APP_ID" || -z "$VITE_FIREBASE_AUTH_DOMAIN" ]]; then
+            echo "FIREBASE_API_KEY, FIREBASE_APP_ID, and FIREBASE_AUTH_DOMAIN must be configured as staging GitHub Environment variables." >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm run test
+      - name: Build
+        run: npm run build
+      - name: Authenticate to Firebase project
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+      - name: Deploy Firebase Hosting
+        run: |
+          firebase deploy \
+            --only "hosting:$FIREBASE_SITE_ID" \
+            --project "$FIREBASE_PROJECT_ID" \
+            --config firebase.staging.json \
+            --non-interactive \
+            --message "Backoffice staging ${GITHUB_SHA::7}"
+      - name: Verify hosted backoffice
+        run: |
+          curl --fail --show-error --retry 6 --retry-delay 10 --retry-all-errors \
+            "https://${FIREBASE_SITE_ID}.web.app/"
