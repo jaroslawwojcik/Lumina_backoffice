@@ -1,0 +1,43 @@
+/* Hallmark · genre: modern-minimal · tone: operational calm · anchor: muted violet · macrostructure: Workbench · pre-emit critique: P5 H5 E4 S5 R5 V4 · contrast: pass (40–41) · nav: persistent rail · footer: none · slop: pass (42–49) · mobile: pass by constraints (34,49–57) */
+:root {
+  --color-paper: oklch(97% 0.008 300);
+  --color-paper-2: oklch(94% 0.012 300);
+  --color-paper-3: oklch(91% 0.016 300);
+  --color-ink: oklch(22% 0.025 300);
+  --color-ink-2: oklch(34% 0.025 300);
+  --color-muted: oklch(48% 0.022 300);
+  --color-neutral: oklch(40% 0.022 300);
+  --color-rule: oklch(88% 0.018 300);
+  --color-rule-2: oklch(72% 0.025 300);
+  --color-accent: oklch(46% 0.12 305);
+  --color-accent-ink: oklch(98% 0.008 300);
+  --color-focus: oklch(20% 0.06 305);
+  --color-success: oklch(48% 0.1 158);
+  --color-success-soft: oklch(94% 0.035 158);
+  --color-warning: oklch(50% 0.11 72);
+  --color-warning-soft: oklch(95% 0.045 82);
+  --color-error: oklch(48% 0.16 25);
+  --color-error-soft: oklch(94% 0.04 25);
+  --color-nav: oklch(22% 0.035 300);
+  --color-nav-raised: oklch(29% 0.045 300);
+  --color-nav-muted: oklch(78% 0.03 300);
+
+  --font-display: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Source Sans 3 Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --radius-input: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-pill: 999px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+}

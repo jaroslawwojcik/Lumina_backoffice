@@ -31,7 +31,7 @@ export function ResourceRevisionForm({ detail }: { detail: ResourceDetail }) {
       {errors.length > 0 && parseObject(text) && <Alert severity="error">{errors.join(' ')}</Alert>}
       {mutation.isError && <Alert severity="error">Nie udało się zapisać rewizji. Sprawdź stan zasobu przed ponownym zapisem.</Alert>}
       {mutation.isSuccess && <Alert severity="success">Zapisano nową rewizję.</Alert>}
-      <Box><Button type="submit" disabled={mutation.isPending} variant="contained" startIcon={<SaveOutlined />}>Zapisz rewizję</Button></Box>
+      <Box><Button type="submit" disabled={mutation.isPending} variant="contained" startIcon={<SaveOutlined />}>{mutation.isPending ? 'Zapisywanie…' : 'Zapisz rewizję'}</Button></Box>
     </Stack>
   </Paper>
 }

@@ -78,11 +78,11 @@ export function CreateResourcePage({ resourceType }: { resourceType: 'session' |
     mutation.mutate(payload.data)
   }
   const title = resourceType === 'session' ? 'Nowa sesja' : 'Nowy materiał'
-  return <Box sx={{ maxWidth: 900, p: { xs: 2, sm: 3.25 } }}>
+  return <Box sx={{ maxWidth: 900, p: { xs: 2, sm: 4 } }}>
     <Button component={Link} startIcon={<ArrowBackOutlined />} to="/content">Wróć do treści</Button>
     <Typography component="h1" sx={{ mt: 2 }} variant="h3">{title}</Typography>
     <Typography color="text.secondary" sx={{ mt: 1 }}>Utwórz zasób i jego pierwszą rewizję.</Typography>
-    <Paper component="form" elevation={0} noValidate onSubmit={form.handleSubmit(submit)} sx={{ border: '1px solid #e4e1e9', mt: 3, p: { xs: 2, sm: 3 } }}>
+    <Paper component="form" elevation={0} noValidate onSubmit={form.handleSubmit(submit)} sx={{ border: '1px solid', borderColor: 'divider', mt: 3, p: { xs: 2, sm: 3 } }}>
       <Stack spacing={2.5}>
         <TextField autoFocus error={Boolean(form.formState.errors.canonicalKey)} helperText={form.formState.errors.canonicalKey?.message} label="Klucz kanoniczny" {...form.register('canonicalKey', { validate: (value) => keySchema.safeParse(value).success || safeKeyMessage })} required />
         <Controller control={form.control} name="locale" render={({ field }) => <FormControl fullWidth><InputLabel id="locale-label">Język</InputLabel><Select {...field} label="Język" labelId="locale-label"><MenuItem value="pl">Polski</MenuItem><MenuItem value="en">Angielski</MenuItem><MenuItem value="pl-pl">Polski (Polska)</MenuItem><MenuItem value="en-us">Angielski (USA)</MenuItem></Select></FormControl>} />
@@ -99,7 +99,7 @@ export function CreateResourcePage({ resourceType }: { resourceType: 'session' |
         <Controller control={form.control} name="snapshotText" render={({ field }) => <SnapshotEditor label="Zrzut JSON pierwszej rewizji" value={field.value} onChange={field.onChange} disabled={mutation.isPending || uploadBusy} suggested={resourceType === 'session' ? { featured: false, intensity: null } : { downloadable: false }} />} />
         {form.formState.errors.snapshotText && parseObject(form.getValues('snapshotText')) && <Alert severity="error">{form.formState.errors.snapshotText.message}</Alert>}
         <FormJsonPreview control={form.control} project={(values) => ({ canonicalKey: values.canonicalKey, locale: values.locale, slug: values.slug, title: values.title, summary: values.summary || undefined, description: values.description || undefined, accessTier: values.accessTier, ...(thumbnailAssetId ? { thumbnailAssetId } : {}), ...(resourceType === 'session' ? { mediaKind: values.mediaKind, ...((values.mediaKind === 'video' ? primaryAssetId : audioAssetId) ? { primaryAssetId: values.mediaKind === 'video' ? primaryAssetId : audioAssetId } : {}), durationSeconds: values.durationSeconds === '' ? null : Number(values.durationSeconds) } : { materialKind: values.materialKind, downloadable: values.downloadable }), snapshot: parseSnapshot(values.snapshotText) ?? null })} />        {mutation.isError && <Alert severity="error">Nie udało się utworzyć zasobu. Stan zapisu jest nieznany.</Alert>}
-        <Box><Button disabled={mutation.isPending || uploadBusy} startIcon={<SaveOutlined />} type="submit" variant="contained">Utwórz {resourceType === 'session' ? 'sesję' : 'materiał'}</Button></Box>
+        <Box><Button disabled={mutation.isPending || uploadBusy} startIcon={<SaveOutlined />} type="submit" variant="contained">{mutation.isPending ? 'Tworzenie…' : `Utwórz ${resourceType === 'session' ? 'sesję' : 'materiał'}`}</Button></Box>
       </Stack>
     </Paper>
   </Box>
