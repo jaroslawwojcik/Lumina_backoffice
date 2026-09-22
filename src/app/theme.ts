@@ -1,12 +1,16 @@
 import { createTheme } from '@mui/material'
+import { paletteTokens } from './designTokens'
 
 export const theme = createTheme({
   palette: {
-    background: { default: 'var(--color-paper)', paper: 'var(--color-paper)' },
-    primary: { main: 'var(--color-accent)', contrastText: 'var(--color-accent-ink)' }, secondary: { main: 'var(--color-muted)' },
-    text: { primary: 'var(--color-ink)', secondary: 'var(--color-muted)' }, divider: 'var(--color-rule)',
-    success: { main: 'var(--color-success)', light: 'var(--color-success-soft)' },
-    warning: { main: 'var(--color-warning)', light: 'var(--color-warning-soft)' }, error: { main: 'var(--color-error)', light: 'var(--color-error-soft)' },
+    background: { default: paletteTokens.paper, paper: paletteTokens.paper },
+    primary: { main: paletteTokens.accent, contrastText: paletteTokens.accentInk },
+    secondary: { main: paletteTokens.muted },
+    text: { primary: paletteTokens.ink, secondary: paletteTokens.muted },
+    divider: paletteTokens.rule,
+    success: { main: paletteTokens.success, light: paletteTokens.successSoft },
+    warning: { main: paletteTokens.warning, light: paletteTokens.warningSoft },
+    error: { main: paletteTokens.error, light: paletteTokens.errorSoft },
   },
   shape: { borderRadius: 12 },
   typography: {
