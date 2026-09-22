@@ -28,6 +28,8 @@ describe('API authoring contracts', () => {
     request.mockResolvedValue(new Response(null, { status: 204 }))
     await createResourceRevision({ resourceId: id, resourceType: 'session' }, { durationSeconds: 60 })
     expect(JSON.parse(request.mock.calls[0][1]!.body as string)).toEqual({ resourceId: id, snapshot: { durationSeconds: 60 }, note: null })
+    await createResourceRevision({ resourceId: id, resourceType: 'program' }, { publicMetadata: { intents: ['sen'] } })
+    expect(request.mock.calls[1][0]).toBe(`/api/v1/admin/programs/${id}/revisions`)
   })
   it('maps resource type and preserves an opaque paging cursor', async () => {
     request.mockResolvedValue(Response.json({ items: [], nextCursor: 'opaque-cursor' }))

@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/useAuth'
 import { hasAnyPermission } from '../../auth/permissions'
 import { FormJsonPreview } from '../../components/forms/FormJsonPreview'
 import { SnapshotEditor } from '../../components/forms/SnapshotEditor'
-import { parseObject, snapshotErrors } from '../../components/forms/snapshot'
+import { parseObject, sessionPublicMetadataSuggestion, snapshotErrors } from '../../components/forms/snapshot'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import SaveOutlined from '@mui/icons-material/SaveOutlined'
 import { Alert, Box, Button, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Paper, Select, Stack, TextField, Typography } from '@mui/material'
@@ -96,7 +96,7 @@ export function CreateResourcePage({ resourceType }: { resourceType: 'session' |
         {hasAnyPermission(permissions, ['media.upload']) && <ThumbnailImageUpload disabled={mutation.isPending} onBusyChange={setImageBusy} onSaved={(result) => setThumbnailAssetId(result.asset.id)} />}
         {resourceType === 'session' && mediaKind === 'audio' && hasAnyPermission(permissions, ['media.upload']) && <SessionAudioUpload disabled={mutation.isPending} onBusyChange={setAudioBusy} onSaved={(result) => { setAudioAssetId(result.asset.id); form.setValue('durationSeconds', String(result.asset.durationSeconds), { shouldValidate: true }) }} />}
         <Typography variant="h6">Dane pierwszej rewizji</Typography>
-        <Controller control={form.control} name="snapshotText" render={({ field }) => <SnapshotEditor label="Zrzut JSON pierwszej rewizji" value={field.value} onChange={field.onChange} disabled={mutation.isPending || uploadBusy} suggested={resourceType === 'session' ? { featured: false, intensity: null } : { downloadable: false }} />} />
+        <Controller control={form.control} name="snapshotText" render={({ field }) => <SnapshotEditor label="Zrzut JSON pierwszej rewizji" value={field.value} onChange={field.onChange} disabled={mutation.isPending || uploadBusy} suggested={resourceType === 'session' ? sessionPublicMetadataSuggestion : {}} />} />
         {form.formState.errors.snapshotText && parseObject(form.getValues('snapshotText')) && <Alert severity="error">{form.formState.errors.snapshotText.message}</Alert>}
         <FormJsonPreview control={form.control} project={(values) => ({ canonicalKey: values.canonicalKey, locale: values.locale, slug: values.slug, title: values.title, summary: values.summary || undefined, description: values.description || undefined, accessTier: values.accessTier, ...(thumbnailAssetId ? { thumbnailAssetId } : {}), ...(resourceType === 'session' ? { mediaKind: values.mediaKind, ...((values.mediaKind === 'video' ? primaryAssetId : audioAssetId) ? { primaryAssetId: values.mediaKind === 'video' ? primaryAssetId : audioAssetId } : {}), durationSeconds: values.durationSeconds === '' ? null : Number(values.durationSeconds) } : { materialKind: values.materialKind, downloadable: values.downloadable }), snapshot: parseSnapshot(values.snapshotText) ?? null })} />        {mutation.isError && <Alert severity="error">Nie udało się utworzyć zasobu. Stan zapisu jest nieznany.</Alert>}
         <Box><Button disabled={mutation.isPending || uploadBusy} startIcon={<SaveOutlined />} type="submit" variant="contained">{mutation.isPending ? 'Tworzenie…' : `Utwórz ${resourceType === 'session' ? 'sesję' : 'materiał'}`}</Button></Box>

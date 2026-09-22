@@ -41,10 +41,20 @@ const resourceDetailSchema = z.object({
   translation: z.object({ locale: z.string(), slug: z.string(), title: z.string(), summary: z.string().nullable(), description: z.string().nullable(), seoTitle: z.string().nullable(), seoDescription: z.string().nullable() }),
   session: z.object({ mediaKind: z.string(), durationSeconds: z.number().int(), featured: z.boolean(), intensity: z.string().nullable() }).nullable(),
   material: z.object({ materialKind: z.string(), downloadable: z.boolean() }).nullable(),
+  program: z.object({ level: z.string().nullable(), estimatedDays: z.number().int().nullable(), sortOrder: z.number().int(), featured: z.boolean() }).nullable().optional(),
   currentRevision: z.object({ revisionId: z.string(), revisionNumber: z.number().int(), note: z.string().nullable(), createdAt: z.string(), snapshot: z.record(z.string(), z.unknown()) }).nullable(),
 })
 
 export type ResourceDetail = z.infer<typeof resourceDetailSchema>
+
+export const updateResourceSchema = z.object({
+  resourceId: z.string().uuid(), expectedVersion: z.number().int().positive(), locale: z.string().min(1),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), title: z.string().trim().min(1),
+  summary: z.string().nullable(), description: z.string().nullable(), seoTitle: z.string().nullable(), seoDescription: z.string().nullable(),
+  accessTier: z.enum(['free', 'premium', 'purchase']), level: z.enum(['beginner', 'intermediate', 'advanced', 'expert']).nullable(),
+  estimatedDays: z.number().int().positive().nullable(), sortOrder: z.number().int().nonnegative().nullable(), featured: z.boolean().nullable(), intensity: z.string().nullable(),
+})
+export type UpdateResource = z.infer<typeof updateResourceSchema>
 
 const revisionHistorySchema = z.object({
   resourceId: z.string(),
@@ -119,7 +129,7 @@ export async function fetchResourceRevisionHistory(resourceId: string, signal?: 
 }
 
 export async function createResourceRevision(resource: Pick<ResourceDetail, 'resourceId' | 'resourceType'>, snapshot: Record<string, unknown>, note?: string): Promise<void> {
-  const endpoint = resource.resourceType === 'session' ? 'sessions' : 'materials'
+  const endpoint = resource.resourceType === 'session' ? 'sessions' : resource.resourceType === 'program' ? 'programs' : 'materials'
   await apiFetch(`/api/v1/admin/${endpoint}/${resource.resourceId}/revisions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resourceId: resource.resourceId, snapshot, note: note ?? null }) })
 }
 
@@ -134,6 +144,12 @@ export async function createSession(payload: CreateSession): Promise<CreateResou
 
 export async function createMaterial(payload: CreateMaterial): Promise<CreateResourceResponse> {
   return createResource('materials', createMaterialSchema.parse(payload))
+}
+
+export async function updateResource(payload: UpdateResource): Promise<ResourceDetail> {
+  const values = updateResourceSchema.parse(payload)
+  const response = await apiFetch(`/api/v1/admin/resources/${values.resourceId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
+  return resourceDetailSchema.parse(await response.json())
 }
 
 

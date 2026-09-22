@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import { SnapshotEditor } from './SnapshotEditor'
-import { parseObject, snapshotErrors } from './snapshot'
+import { parseObject, sessionPublicMetadataSuggestion, snapshotErrors } from './snapshot'
 
 function Editor({ initial }: { initial: Record<string, unknown> }) {
   const [value, setValue] = useState(JSON.stringify(initial))
@@ -46,6 +46,28 @@ describe('SnapshotEditor', () => {
     expect(parseObject('null')).toBeUndefined()
     expect(snapshotErrors({ durationSeconds: 1.5, featured: 'false', intensity: 'extreme' })).toHaveLength(3)
     expect(snapshotErrors({ estimatedDays: null, intensity: null, downloadable: false })).toEqual([])
+  })
+
+  it('authors public discovery metadata in the published publicMetadata object', () => {
+    function PublicMetadataEditor() {
+      const [value, setValue] = useState('{}')
+      return <SnapshotEditor label="JSON" value={value} onChange={setValue} suggested={sessionPublicMetadataSuggestion} />
+    }
+
+    render(<PublicMetadataEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'Dodaj pozycję: Metadane publiczne / Cele praktyki' }))
+    fireEvent.change(screen.getByLabelText('Metadane publiczne / Cele praktyki 1'), { target: { value: 'sen' } })
+    fireEvent.change(screen.getByLabelText('Metadane publiczne / Osoba prowadząca'), { target: { value: 'Natalia' } })
+
+    expect(JSON.parse((screen.getByLabelText('JSON') as HTMLTextAreaElement).value)).toEqual({
+      publicMetadata: {
+        style: null,
+        intents: ['sen'],
+        focusAreas: [],
+        equipment: [],
+        instructorDisplayName: 'Natalia',
+      },
+    })
   })
 })
 

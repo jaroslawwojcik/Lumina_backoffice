@@ -31,7 +31,7 @@ describe('program authoring', () => {
   })
 
   it('creates a section using the exact curriculum payload', async () => {
-    mockedFetchProgramDraft.mockResolvedValue({ programId: 'c0a80101-0000-7000-8000-000000000003', canonicalKey: 'tydzien-spokoju', status: 'draft', locale: 'pl-pl', slug: 'tydzien-spokoju', title: 'Tydzień spokoju', summary: null, description: null, level: null, estimatedDays: null, sections: [] })
+    mockedFetchProgramDraft.mockResolvedValue({ programId: 'c0a80101-0000-7000-8000-000000000003', canonicalKey: 'tydzien-spokoju', status: 'draft', locale: 'pl-pl', slug: 'tydzien-spokoju', title: 'Tydzień spokoju', summary: null, description: null, level: null, estimatedDays: null, version: 1, accessTier: 'free', sortOrder: 0, featured: false, seoTitle: null, seoDescription: null, currentRevisionSnapshot: {}, sections: [] })
     mockedCreateProgramSection.mockResolvedValue()
     wrapper(<Route path="/content/programs/:resourceId" element={<ProgramEditorPage />} />, '/content/programs/c0a80101-0000-7000-8000-000000000003')
     await screen.findByRole('heading', { name: 'Tydzień spokoju' })

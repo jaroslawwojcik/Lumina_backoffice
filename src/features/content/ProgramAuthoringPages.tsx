@@ -2,7 +2,7 @@ import { ResourcePicker } from '../../components/forms/ResourcePicker'
 import { FormJsonPreview } from '../../components/forms/FormJsonPreview'
 import { JsonPreview } from '../../components/forms/JsonPreview'
 import { SnapshotEditor } from '../../components/forms/SnapshotEditor'
-import { parseObject, snapshotErrors } from '../../components/forms/snapshot'
+import { parseObject, programPublicMetadataSuggestion, snapshotErrors } from '../../components/forms/snapshot'
 import AddOutlined from '@mui/icons-material/AddOutlined'
 import ArrowBackOutlined from '@mui/icons-material/ArrowBackOutlined'
 import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined'
@@ -20,6 +20,8 @@ import { ApiError } from '../../api/apiError'
 import { hasAnyPermission } from '../../auth/permissions'
 import { useAuth } from '../../auth/useAuth'
 import { createProgram, createProgramSchema, createProgramSection, deleteProgramSection, fetchProgramDraft, reorderProgramSections, replaceProgramSection, type ProgramDraft, type ProgramSectionPayload } from './programApi'
+import { ResourceMetadataForm } from './ResourceMetadataForm'
+import { ResourceRevisionForm } from './ResourceRevisionForm'
 
 const keyMessage = 'Użyj małych liter, cyfr i pojedynczych myślników.'
 const keyPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -59,7 +61,7 @@ export function CreateProgramPage() {
       <TextField error={Boolean(form.formState.errors.estimatedDays)} helperText={form.formState.errors.estimatedDays?.message} label="Szacowany czas (dni, opcjonalnie)" slotProps={{ htmlInput: { min: 1 } }} type="number" {...form.register('estimatedDays', { validate: (value) => value === '' || Number.isSafeInteger(Number(value)) && Number(value) > 0 || 'Podaj dodatnią liczbę całkowitą.' })} />
       <Controller control={form.control} name="accessTier" render={({ field }) => <FormControl fullWidth><InputLabel id="program-access-tier">Dostęp</InputLabel><Select {...field} label="Dostęp" labelId="program-access-tier"><MenuItem value="free">Bezpłatny</MenuItem><MenuItem value="premium">Premium</MenuItem><MenuItem value="purchase">Zakup</MenuItem></Select></FormControl>} />
       <Typography variant="h6">Dane pierwszej rewizji</Typography>
-      <Controller control={form.control} name="snapshotText" render={({ field }) => <SnapshotEditor label="Zrzut JSON pierwszej rewizji" value={field.value} onChange={field.onChange} disabled={mutation.isPending} />} />
+      <Controller control={form.control} name="snapshotText" render={({ field }) => <SnapshotEditor label="Zrzut JSON pierwszej rewizji" value={field.value} onChange={field.onChange} disabled={mutation.isPending} suggested={programPublicMetadataSuggestion} />} />
       {form.formState.errors.snapshotText && parseObject(form.getValues('snapshotText')) && <Alert severity="error">{form.formState.errors.snapshotText.message}</Alert>}
       <FormJsonPreview control={form.control} project={(values) => ({ canonicalKey: values.canonicalKey, locale: values.locale, slug: values.slug, title: values.title, summary: values.summary || undefined, description: values.description || undefined, level: values.level || undefined, estimatedDays: values.estimatedDays ? Number(values.estimatedDays) : undefined, accessTier: values.accessTier, snapshot: parseObject(values.snapshotText) ?? null })} />      {mutation.isError && <Alert severity="error">Nie udało się utworzyć programu. Stan zapisu jest nieznany.</Alert>}
       <Box><Button disabled={mutation.isPending} startIcon={<SaveOutlined />} type="submit" variant="contained">Utwórz program</Button></Box>
@@ -90,12 +92,14 @@ export function ProgramEditorPage() {
   const canEditContent = hasAnyPermission(permissions, ['content.edit'])
   const canEditCurriculum = hasAnyPermission(permissions, ['curriculum.edit'])
   const orderedSections = [...draft.sections].sort((first, second) => first.position - second.position)
+  const editableProgram = { resourceId: draft.programId, resourceType: 'program' as const, accessTier: draft.accessTier, version: draft.version, translation: { locale: draft.locale, slug: draft.slug, title: draft.title, summary: draft.summary, description: draft.description, seoTitle: draft.seoTitle, seoDescription: draft.seoDescription }, session: null, program: { level: draft.level, estimatedDays: draft.estimatedDays, sortOrder: draft.sortOrder, featured: draft.featured } }
+  const revisionProgram = { ...editableProgram, status: draft.status, defaultLocale: draft.locale, canonicalKey: draft.canonicalKey, createdAt: '', updatedAt: '', material: null, currentRevision: draft.currentRevisionSnapshot ? { revisionId: '00000000-0000-0000-0000-000000000000', revisionNumber: 1, note: null, createdAt: '', snapshot: draft.currentRevisionSnapshot } : null }
   const reorder = (index: number, direction: -1 | 1) => { const next = [...orderedSections]; const target = index + direction; [next[index], next[target]] = [next[target], next[index]]; curriculumMutation.mutate({ type: 'reorder', sectionIds: next.map((section) => section.sectionId) }) }
   return <Box sx={{ maxWidth: 1100, p: { xs: 2, sm: 4 } }}>
     <Button component={Link} startIcon={<ArrowBackOutlined />} to="/content">Wróć do treści</Button>
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' }, justifyContent: 'space-between', mb: 3, mt: 2 }}><Box><Typography component="h1" variant="h3">{draft.title}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{draft.canonicalKey}</Typography></Box><Chip label={draft.status} /></Stack>
     <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', mb: 3, p: 2.5 }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' }, flexWrap: 'wrap' }}><Typography>Slug: {draft.slug}</Typography><Typography>Poziom: {draft.level ?? 'Nie określono'}</Typography><Typography>Szacowany czas: {draft.estimatedDays ? `${draft.estimatedDays} dni` : 'Nie określono'}</Typography><FormControl size="small" sx={{ minWidth: 160 }}><InputLabel>Język</InputLabel><Select label="Język" value={locale} onChange={(event) => { const next = new URLSearchParams(searchParams); next.set('locale', event.target.value); setSearchParams(next) }}><MenuItem value="pl">Polski</MenuItem><MenuItem value="en">Angielski</MenuItem><MenuItem value="pl-pl">Polski (Polska)</MenuItem><MenuItem value="en-us">Angielski (USA)</MenuItem></Select></FormControl></Stack></Paper>
-    <Paper variant="outlined" sx={{ p: 2.5, mb: 3 }}><Typography variant="h5" sx={{ mb: 2 }}>Dane podstawowe programu</Typography><Typography color="text.secondary" sx={{ mb: 2 }}>Dane podstawowe są tylko do odczytu. Poniżej możesz edytować sekcje i ich zawartość.</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>{[["Tytuł", draft.title], ["Slug", draft.slug], ["Poziom", draft.level ?? ""], ["Szacowany czas (dni)", draft.estimatedDays ?? ""], ["Krótki opis", draft.summary ?? ""], ["Opis", draft.description ?? ""]].map(([label, value]) => <TextField key={label} label={label} value={value} slotProps={{ input: { readOnly: true } }} />)}</Box></Paper>
+    {canEditContent ? <Stack spacing={3} sx={{ mb: 3 }}><ResourceMetadataForm detail={editableProgram} /><ResourceRevisionForm detail={revisionProgram} /></Stack> : <Paper variant="outlined" sx={{ p: 2.5, mb: 3 }}><Typography variant="h5" sx={{ mb: 2 }}>Dane podstawowe programu</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>{[["Tytuł", draft.title], ["Slug", draft.slug], ["Poziom", draft.level ?? ""], ["Szacowany czas (dni)", draft.estimatedDays ?? ""], ["Krótki opis", draft.summary ?? ""], ["Opis", draft.description ?? ""]].map(([label, value]) => <TextField key={label} label={label} value={value} slotProps={{ input: { readOnly: true } }} />)}</Box></Paper>}
     {!canEditContent && <Alert severity="info" sx={{ mb: 3 }}>Masz dostęp tylko do odczytu treści programu.</Alert>}
     <Stack spacing={2}><Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography component="h2" variant="h5">Program</Typography>{canEditCurriculum && <Button disabled={curriculumMutation.isPending || isAdding} onClick={() => setIsAdding(true)} startIcon={<AddOutlined />} variant="contained">Dodaj sekcję</Button>}</Stack>
       {curriculumMutation.isError && <Alert severity="error">Nie udało się zapisać zmian programu. Stan zapisu jest nieznany. Odśwież dane przed kolejną zmianą.</Alert>}

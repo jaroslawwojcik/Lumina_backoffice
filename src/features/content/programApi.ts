@@ -33,6 +33,13 @@ const programDraftSchema = z.object({
   description: z.string().nullable(),
   level: z.string().nullable(),
   estimatedDays: z.number().int().nullable(),
+  version: z.number().int().positive().default(1),
+  accessTier: accessTierSchema.default('free'),
+  sortOrder: z.number().int().nonnegative().default(0),
+  featured: z.boolean().default(false),
+  seoTitle: z.string().nullable().default(null),
+  seoDescription: z.string().nullable().default(null),
+  currentRevisionSnapshot: z.record(z.string(), z.unknown()).nullable().default(null),
   sections: z.array(z.object({
     sectionId: z.string().uuid(),
     position: z.number().int(),

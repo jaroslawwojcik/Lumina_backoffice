@@ -7,6 +7,7 @@ export type FieldDefinition = {
 }
 
 export const snapshotFields: Record<string, FieldDefinition> = {
+  publicMetadata: { label: 'Metadane publiczne' },
   title: { label: 'Tytuł' }, summary: { label: 'Krótki opis', type: 'multiline', nullable: true },
   description: { label: 'Opis', type: 'multiline', nullable: true },
   mediaKind: { label: 'Format sesji', options: [['video', 'Wideo'], ['audio', 'Audio']] },
@@ -18,6 +19,25 @@ export const snapshotFields: Record<string, FieldDefinition> = {
   level: { label: 'Poziom', nullable: true }, estimatedDays: { label: 'Szacowany czas (dni)', type: 'number', min: 1, nullable: true },
   slug: { label: 'Slug' }, locale: { label: 'Język' }, seoTitle: { label: 'Tytuł SEO', nullable: true }, seoDescription: { label: 'Opis SEO', type: 'multiline', nullable: true },
   focusAreas: { label: 'Obszary praktyki' }, intents: { label: 'Cele praktyki' }, equipment: { label: 'Sprzęt' }, style: { label: 'Styl', nullable: true },
+  instructorDisplayName: { label: 'Osoba prowadząca', nullable: true },
+}
+
+export const sessionPublicMetadataSuggestion: Record<string, unknown> = {
+  publicMetadata: {
+    style: null,
+    intents: [],
+    focusAreas: [],
+    equipment: [],
+    instructorDisplayName: null,
+  },
+}
+
+export const programPublicMetadataSuggestion: Record<string, unknown> = {
+  publicMetadata: {
+    intents: [],
+    focusAreas: [],
+    instructorDisplayName: null,
+  },
 }
 
 export function parseObject(text: string): Record<string, unknown> | undefined {
