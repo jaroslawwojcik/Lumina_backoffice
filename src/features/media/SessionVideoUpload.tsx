@@ -6,7 +6,7 @@ import { Upload } from 'tus-js-client'
 import { completeVideoUpload, prepareVideoUpload, videoFileError, videoUploadConfiguration, videoUploadStatus, type CompletedVideo, type PreparedVideo } from './videoUploadApi'
 
 type Stage = 'idle' | 'preparing' | 'uploading' | 'paused' | 'processing' | 'saving' | 'done' | 'transferError'
-export function SessionVideoUpload({ resourceId, expectedRevisionId, onSaved, onBusyChange }: { resourceId?: string; expectedRevisionId?: string; onSaved?: (result: CompletedVideo) => void; onBusyChange?: (busy: boolean) => void }) {
+export function SessionVideoUpload({ resourceId, expectedRevisionId, onSaved, onBusyChange, libraryOnly = false }: { resourceId?: string; expectedRevisionId?: string; onSaved?: (result: CompletedVideo) => void; onBusyChange?: (busy: boolean) => void; libraryOnly?: boolean }) {
   const configuration = useQuery({ queryKey: ['video-upload-configuration'], queryFn: ({ signal }) => videoUploadConfiguration(signal), retry: false })
   const [file, setFile] = useState<File>()
   const [name, setName] = useState('')
@@ -76,7 +76,7 @@ export function SessionVideoUpload({ resourceId, expectedRevisionId, onSaved, on
   }
   return <Box sx={{ border: '1px dashed', borderColor: 'primary.light', borderRadius: 2, p: 2.5 }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); choose(event.dataTransfer.files[0]) }}>
     <Stack spacing={2}>
-      <Typography variant="h6">Główne wideo</Typography>
+      <Typography variant="h6">{libraryOnly ? 'Wideo do biblioteki' : 'Główne wideo'}</Typography>
       {configuration.isPending && <Typography>Sprawdzanie dostępności uploadu…</Typography>}
       {configuration.isError && <Alert severity="warning">Nie można sprawdzić konfiguracji uploadu. <Button onClick={() => void configuration.refetch()}>Spróbuj ponownie</Button></Alert>}
       {configuration.data && !configuration.data.enabled && <Alert severity="info">Upload wideo czeka na konfigurację Bunny po stronie serwera.</Alert>}
@@ -92,7 +92,7 @@ export function SessionVideoUpload({ resourceId, expectedRevisionId, onSaved, on
           : status.data?.status === 'failed' ? <Alert severity="error">Bunny nie przetworzył filmu. Anuluj i wybierz inny plik.</Alert>
             : <Typography role="status">Plik przesłany. Trwa przetwarzanie filmu: {status.data?.encodeProgress ?? 0}%.</Typography>}
         {status.isError && <Alert severity="error">Nie można pobrać statusu. <Button onClick={() => void status.refetch()}>Sprawdź ponownie</Button></Alert>}
-        {status.data?.status === 'ready' && <Button variant="contained" onClick={() => void save()}>{resourceId ? 'Zapisz film i nową rewizję' : 'Dodaj gotowy film do sesji'}</Button>}
+        {status.data?.status === 'ready' && <Button variant="contained" onClick={() => void save()}>{libraryOnly ? 'Zapisz film w bibliotece' : resourceId ? 'Zapisz film i nową rewizję' : 'Dodaj gotowy film do sesji'}</Button>}
       </>}
       {stage === 'saving' && <Typography role="status">Zapisywanie gotowego filmu…</Typography>}
       {stage === 'done' && <Alert severity="success">Film zapisany w bibliotece{attached ? ' i przypisany w nowej rewizji sesji.' : resourceId ? '. Możesz go teraz wybrać w sekcji Media.' : '. Zapisz formularz, aby utworzyć sesję z tym filmem.'}</Alert>}
