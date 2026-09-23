@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { hasAnyPermission } from '../../auth/permissions'
 import { useAuth } from '../../auth/useAuth'
+import { fetchProgramDraft } from '../content/programApi'
 import { fetchResourceDetail, fetchResources, type Resource } from '../content/resourceApi'
 import { activateRelease, buildRelease, type BuildReleaseRequest, type BuildReleaseResponse } from './releaseApi'
 
@@ -23,13 +24,18 @@ export function ReleaseComposerPage() {
   const [release, setRelease] = useState<BuildReleaseResponse>()
   const resourcesQuery = useQuery({ queryKey: ['resources', 'release-composer', locale], queryFn: ({ signal }) => fetchResources({ locale, pageSize: 100, sort: 'title:asc' }, signal) })
   const selectedResources = (resourcesQuery.data?.items ?? []).filter((resource) => selectedResourceIds.includes(resource.resourceId))
+  const selectedPrograms = selectedResources.filter((resource) => resource.resourceType === 'program')
   const detailQueries = useQueries({ queries: selectedResources.map((resource) => ({ queryKey: ['resource', resource.resourceId, locale], queryFn: ({ signal }: { signal: AbortSignal }) => fetchResourceDetail(resource.resourceId, locale, signal), retry: false })) })
+  const programQueries = useQueries({ queries: selectedPrograms.map((program) => ({ queryKey: ['program-draft', program.resourceId, locale], queryFn: ({ signal }: { signal: AbortSignal }) => fetchProgramDraft(program.resourceId, locale, signal), retry: false })) })
   const currentRevisions = selectedResources.map((resource, index) => ({ resource, detail: detailQueries[index]?.data, isPending: detailQueries[index]?.isPending ?? false })).filter(({ resource, detail }) => detail?.currentRevision && detail.currentRevision.revisionNumber === resource.currentRevisionNumber)
   const missingRevisionCount = selectedResources.length - currentRevisions.length
+  const missingProgramDependencies = [...new Map(programQueries.flatMap((query) => query.data?.sections.flatMap((section) => section.entries) ?? []).filter((entry) => !selectedResourceIds.includes(entry.resourceId)).map((entry) => [entry.resourceId, entry])).values()]
+  const programDependenciesPending = programQueries.some((query) => query.isPending)
+  const programDependenciesFailed = programQueries.some((query) => query.isError)
   const buildMutation = useMutation({ mutationFn: (request: BuildReleaseRequest) => buildRelease(request), retry: false, onSuccess: setRelease })
   const activateMutation = useMutation({ mutationFn: (releaseId: string) => activateRelease(releaseId), retry: false })
   const canActivate = hasAnyPermission(permissions, ['release.activate'])
-  const canSubmit = selectedResources.length > 0 && missingRevisionCount === 0 && !buildMutation.isPending && !release
+  const canSubmit = selectedResources.length > 0 && missingRevisionCount === 0 && missingProgramDependencies.length === 0 && !programDependenciesPending && !programDependenciesFailed && !buildMutation.isPending && !release
 
   const toggleResource = (resource: Resource) => {
     if (resource.currentRevisionNumber === null) return
@@ -45,6 +51,9 @@ export function ReleaseComposerPage() {
   const build = () => {
     buildMutation.mutate({ locale, revisions: currentRevisions.map(({ resource, detail }) => ({ resourceId: resource.resourceId, revisionId: detail!.currentRevision!.revisionId })) })
   }
+  const selectAllRevised = () => {
+    setSelectedResourceIds((resourcesQuery.data?.items ?? []).filter((resource) => resource.currentRevisionNumber !== null).map((resource) => resource.resourceId))
+  }
 
   return <Box sx={{ maxWidth: 1200, p: { xs: 2, sm: 4 } }}>
     <Button component={Link} startIcon={<ArrowBackOutlined />} to="/releases">Wróć do wydań</Button>
@@ -57,15 +66,18 @@ export function ReleaseComposerPage() {
       {resourcesQuery.isPending && <Typography aria-live="polite">Ładowanie treści...</Typography>}
       {resourcesQuery.isError && <Alert severity="error">Nie udało się pobrać treści do wydania.</Alert>}
       {resourcesQuery.isSuccess && resourcesQuery.data.items.length === 0 && <Alert severity="info">Brak treści z tłumaczeniem dla wybranego języka.</Alert>}
-      {resourcesQuery.isSuccess && resourcesQuery.data.items.length > 0 && <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}><Table aria-label="Zasoby do wydania"><TableHead><TableRow><TableCell padding="checkbox" /><TableCell>Tytuł</TableCell><TableCell>Typ</TableCell><TableCell>Aktualna rewizja</TableCell><TableCell>Stan wyboru</TableCell></TableRow></TableHead><TableBody>{resourcesQuery.data.items.map((resource) => {
+      {resourcesQuery.isSuccess && resourcesQuery.data.items.length > 0 && <><Box><Button onClick={selectAllRevised} variant="outlined">Wybierz wszystkie z rewizją</Button></Box><TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}><Table aria-label="Zasoby do wydania"><TableHead><TableRow><TableCell padding="checkbox" /><TableCell>Tytuł</TableCell><TableCell>Typ</TableCell><TableCell>Aktualna rewizja</TableCell><TableCell>Stan wyboru</TableCell></TableRow></TableHead><TableBody>{resourcesQuery.data.items.map((resource) => {
         const detailIndex = selectedResources.findIndex((selected) => selected.resourceId === resource.resourceId)
         const detailQuery = detailIndex === -1 ? undefined : detailQueries[detailIndex]
         const selected = detailIndex !== -1
         const revisionUnavailable = resource.currentRevisionNumber === null
         const revisionMismatch = selected && detailQuery?.isSuccess && detailQuery.data.currentRevision?.revisionNumber !== resource.currentRevisionNumber
         return <TableRow key={resource.resourceId}><TableCell padding="checkbox"><Checkbox checked={selected} disabled={revisionUnavailable} onChange={() => toggleResource(resource)} slotProps={{ input: { 'aria-label': `Wybierz ${resource.title}` } }} /></TableCell><TableCell><Typography sx={{ fontWeight: 700 }}>{resource.title}</Typography><Typography color="text.secondary" variant="body2">{resource.canonicalKey}</Typography></TableCell><TableCell>{{ session: 'Sesja', program: 'Program', material: 'Materiał' }[resource.resourceType] ?? resource.resourceType}</TableCell><TableCell>{resource.currentRevisionNumber === null ? 'Brak' : `Wersja ${resource.currentRevisionNumber}`}</TableCell><TableCell>{revisionUnavailable ? <Chip color="warning" label="Brak rewizji" size="small" /> : !selected ? 'Niewybrany' : detailQuery?.isPending ? 'Sprawdzanie…' : detailQuery?.isError || revisionMismatch ? <Chip color="error" label="Nie można użyć" size="small" /> : <Chip color="success" label="Gotowy" size="small" />}</TableCell></TableRow>
-      })}</TableBody></Table></TableContainer>}
+      })}</TableBody></Table></TableContainer></>}
       {selectedResources.length > 0 && missingRevisionCount > 0 && <Alert severity="warning">Czekamy na potwierdzenie aktualnych rewizji. Zasób bez zgodnej aktualnej rewizji nie może wejść do wydania.</Alert>}
+      {programDependenciesPending && <Alert severity="info">Sprawdzamy sesje i materiały przypisane do wybranych programów…</Alert>}
+      {programDependenciesFailed && <Alert severity="error">Nie udało się sprawdzić zawartości wybranego programu. Odśwież stronę i spróbuj ponownie.</Alert>}
+      {missingProgramDependencies.length > 0 && <Alert severity="warning">Wybrane programy wymagają dodania do wydania: {missingProgramDependencies.map((entry) => entry.canonicalKey).join(', ')}. Zaznacz te zasoby albo użyj „Wybierz wszystkie z rewizją”.</Alert>}
       {buildMutation.isError && <Alert severity="error">{buildMutation.error.message || 'Nie udało się utworzyć wydania.'}</Alert>}
       <JsonPreview label="Dane wydania (JSON)" value={{ locale, revisions: currentRevisions.map(({ resource, detail }) => ({ resourceId: resource.resourceId, revisionId: detail!.currentRevision!.revisionId })) }} />
       {!release && <Box><Button disabled={!canSubmit} onClick={build} startIcon={<PublishOutlined />} variant="contained">{buildMutation.isPending ? 'Tworzenie wydania…' : 'Utwórz wydanie'}</Button></Box>}

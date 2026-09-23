@@ -9,13 +9,13 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "!/@(assets)/**",
         "destination": "/index.html"
       }
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css)",
+        "source": "/assets/**",
         "headers": [
           {
             "key": "Cache-Control",
@@ -24,7 +24,7 @@
         ]
       },
       {
-        "source": "index.html",
+        "source": "!/@(assets)/**",
         "headers": [
           {
             "key": "Cache-Control",

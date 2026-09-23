@@ -69,5 +69,17 @@ describe('SnapshotEditor', () => {
       },
     })
   })
+
+  it('accepts a populated publicMetadata object from the session payload', () => {
+    expect(snapshotErrors({
+      publicMetadata: {
+        style: 'test1asdasd',
+        intents: [],
+        focusAreas: [],
+        equipment: [],
+        instructorDisplayName: 'Natalia testowa',
+      },
+    })).toEqual([])
+  })
 })
 

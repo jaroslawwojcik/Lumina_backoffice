@@ -1,13 +1,13 @@
 export type FieldDefinition = {
   label: string
-  type?: 'number' | 'boolean' | 'text' | 'multiline'
+  type?: 'number' | 'boolean' | 'text' | 'multiline' | 'object'
   options?: readonly (readonly [string, string])[]
   min?: number
   nullable?: boolean
 }
 
 export const snapshotFields: Record<string, FieldDefinition> = {
-  publicMetadata: { label: 'Metadane publiczne' },
+  publicMetadata: { label: 'Metadane publiczne', type: 'object' },
   title: { label: 'Tytuł' }, summary: { label: 'Krótki opis', type: 'multiline', nullable: true },
   description: { label: 'Opis', type: 'multiline', nullable: true },
   mediaKind: { label: 'Format sesji', options: [['video', 'Wideo'], ['audio', 'Audio']] },
@@ -47,6 +47,7 @@ export function parseObject(text: string): Record<string, unknown> | undefined {
 export function fieldError(key: string, value: unknown): string | undefined {
   const definition = snapshotFields[key]
   if (!definition || value === undefined || (value === null && definition.nullable)) return
+  if (definition.type === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value) ? undefined : 'Wprowadź obiekt.'
   if (['focusAreas', 'intents', 'equipment'].includes(key)) return Array.isArray(value) && value.every((item) => typeof item === 'string' && item.trim()) ? undefined : 'Podaj listę niepustych wartości tekstowych.'
   if (definition.type === 'number') return typeof value === 'number' && Number.isSafeInteger(value) && value >= (definition.min ?? 0) ? undefined : `Podaj liczbę całkowitą nie mniejszą niż ${definition.min ?? 0}.`
   if (definition.type === 'boolean') return typeof value === 'boolean' ? undefined : 'Wybierz tak lub nie.'
