@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
+import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { SessionVideoUpload } from './SessionVideoUpload'
@@ -19,9 +19,11 @@ export function AssetEditorDialog({ asset, initialKind, onClose }: { asset?: Med
   const [success, setSuccess] = useState<string>()
   const [pending, setPending] = useState(false)
   const [uploadBusy, setUploadBusy] = useState(false)
+  const [manualMetadata, setManualMetadata] = useState(asset?.metadataSource === 'manual')
   const client = useQueryClient()
   const ready = saved?.providerStatus === 'ready'
   const video = fields.kind === 'video'
+  const providerReady = ready && saved?.metadataSource !== 'manual'
   const media = video || fields.kind === 'audio'
   const busy = pending || uploadBusy
   const refresh = async () => { await Promise.all(['assets', 'resources', 'resource', 'resource-assets', 'resource-revisions', 'asset-preview'].map((key) => client.invalidateQueries({ queryKey: [key] }))) }
@@ -36,6 +38,7 @@ export function AssetEditorDialog({ asset, initialKind, onClose }: { asset?: Med
       bytes: fields.bytes.trim() ? Number(fields.bytes) : null,
       width: fields.width.trim() ? Number(fields.width) : null, height: fields.height.trim() ? Number(fields.height) : null,
       durationSeconds: fields.durationSeconds.trim() ? Number(fields.durationSeconds) : null, verifyProvider: verify,
+      useManualMetadata: manualMetadata && !verify,
     }
     const parsed = registerAssetSchema.safeParse(payload)
     const issues: Partial<Record<keyof Fields, string>> = {}
@@ -46,8 +49,8 @@ export function AssetEditorDialog({ asset, initialKind, onClose }: { asset?: Med
     setPending(true)
     try {
       const result = saved ? await updateAsset(saved.id, parsed.data) : await registerAsset(parsed.data)
-      setSaved(result); setFields(defaults(result.kind, result))
-      setSuccess(verify ? 'Metadane pobrano z Bunny. Medium jest gotowe. Przypisane treści otrzymały nowe rewizje, jeśli ich metadane się zmieniły. Do wydania wybierz najnowsze rewizje.' : 'Zapisano zmiany medium.')
+      setSaved(result); setFields(defaults(result.kind, result)); setManualMetadata(result.metadataSource === 'manual')
+      setSuccess(verify ? 'Metadane pobrano z Bunny. Medium jest gotowe. Przypisane treści otrzymały nowe rewizje, jeśli ich metadane się zmieniły. Do wydania wybierz najnowsze rewizje.' : manualMetadata ? 'Zapisano ręczne metadane medium. Przypisane treści otrzymały nowe rewizje, jeśli dane się zmieniły.' : 'Zapisano zmiany medium.')
       await refresh()
       if (close) onClose()
     } catch (problem) { setError(problem instanceof Error ? problem.message : 'Nie udało się zapisać medium.') }
@@ -66,12 +69,14 @@ export function AssetEditorDialog({ asset, initialKind, onClose }: { asset?: Med
           : fields.kind === 'audio' ? <SessionAudioUpload onBusyChange={setUploadBusy} onSaved={() => { void refresh(); onClose() }} />
             : fields.kind === 'image' ? <ThumbnailImageUpload onBusyChange={setUploadBusy} onSaved={() => { void refresh(); onClose() }} />
               : <Alert severity="info">Upload obsługuje wideo, audio i obrazy. Dokument, napisy lub transkrypcję dodaj jako istniejący zasób.</Alert>}
-      </> : <Box component="form" id="asset-editor" noValidate onSubmit={(event) => { event.preventDefault(); void submit(video && !ready, true) }}><Stack spacing={2}>
+      </> : <Box component="form" id="asset-editor" noValidate onSubmit={(event) => { event.preventDefault(); void submit(video && !ready && !manualMetadata, true) }}><Stack spacing={2}>
         {text('displayName', 'Nazwa w bibliotece', { required: true })}
         {video ? <>
-          <Alert severity="info">Bunny Stream: czas trwania, wymiary i rozmiar pobieramy z serwera. Nie wpisuj ich ręcznie.</Alert>
+          <Alert severity="info">Najpierw spróbuj pobrać metadane z Bunny. Jeżeli API nie zwraca kompletu danych, istniejący film możesz oznaczyć jako uzupełniony ręcznie.</Alert>
           {text('externalId', 'Identyfikator filmu w Bunny', { required: true, disabled: ready, helper: 'UUID filmu z biblioteki Bunny Stream.' })}
           {text('providerLibraryId', 'ID biblioteki Bunny (opcjonalnie)', { disabled: ready, helper: 'Puste pole oznacza bibliotekę skonfigurowaną na serwerze.' })}
+          {saved && !providerReady && <FormControlLabel control={<Checkbox checked={manualMetadata} disabled={pending} onChange={(event) => { setManualMetadata(event.target.checked); setErrors({}); setError(undefined); setSuccess(undefined) }} />} label="Uzupełnij metadane filmu ręcznie" />}
+          {manualMetadata && <Alert severity="warning">Te dane nie zostaną potwierdzone przez Bunny. Sprawdź czas i rozdzielczość przed publikacją.</Alert>}
         </> : <>
           {text('provider', 'Dostawca', { required: true, disabled: ready })}
           {text('externalId', 'Identyfikator u dostawcy', { disabled: ready })}
@@ -81,13 +86,14 @@ export function AssetEditorDialog({ asset, initialKind, onClose }: { asset?: Med
         </>}
         {text('mimeType', 'Typ MIME (opcjonalnie)', { disabled: ready || video, helper: video ? 'Format źródłowy jest dostępny po uploadzie.' : fields.kind === 'audio' ? 'Np. audio/mpeg lub audio/mp4.' : 'Np. image/jpeg, application/pdf lub text/vtt.' })}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          {text('bytes', 'Rozmiar w bajtach (opcjonalnie)', { type: 'number', disabled: ready || video })}
-          {(video || fields.kind === 'image') && text('width', 'Szerokość (opcjonalnie)', { type: 'number', disabled: ready || video })}
-          {(video || fields.kind === 'image') && text('height', 'Wysokość (opcjonalnie)', { type: 'number', disabled: ready || video })}
+          {text('bytes', 'Rozmiar w bajtach (opcjonalnie)', { type: 'number', disabled: providerReady || (video && !manualMetadata) })}
+          {(video || fields.kind === 'image') && text('width', 'Szerokość (opcjonalnie)', { type: 'number', disabled: providerReady || (video && !manualMetadata) })}
+          {(video || fields.kind === 'image') && text('height', 'Wysokość (opcjonalnie)', { type: 'number', disabled: providerReady || (video && !manualMetadata) })}
         </Stack>
-        {media && text('durationSeconds', 'Czas trwania w sekundach (opcjonalnie)', { type: 'number', disabled: ready || video })}
+        {media && text('durationSeconds', 'Czas trwania w sekundach (opcjonalnie)', { type: 'number', disabled: providerReady || (video && !manualMetadata) })}
         {video && <Button disabled={pending} variant="outlined" onClick={() => void submit(true, false)}>{pending ? 'Sprawdzanie Bunny…' : 'Pobierz i zapisz metadane z Bunny'}</Button>}
-        {ready && <Typography variant="body2" color="text.secondary">Metadane gotowego pliku są chronione. Możesz zmienić nazwę; podmianę pliku wykonaj przez dodanie nowego medium.</Typography>}
+        {providerReady && <Typography variant="body2" color="text.secondary">Metadane potwierdzone przez Bunny są chronione. Możesz zmienić nazwę; podmianę pliku wykonaj przez dodanie nowego medium.</Typography>}
+        {saved?.metadataSource === 'manual' && <Typography variant="body2" color="warning.main">Źródło metadanych: wpisane ręcznie przez administratora.</Typography>}
         {success && <Alert severity="success">{success}</Alert>}{error && <Alert severity="error">{error}</Alert>}
       </Stack></Box>}
     </Stack></DialogContent>

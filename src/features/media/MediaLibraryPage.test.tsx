@@ -93,6 +93,30 @@ describe('MediaLibraryPage', () => {
     expect(screen.getByText(/Metadane pobrano z Bunny/)).toBeInTheDocument()
   })
 
+  it('lets an administrator complete missing Bunny metadata manually', async () => {
+    const video = { ...asset, kind: 'video' as const, displayName: 'Joga', provider: 'bunny_stream', externalId: asset.id, durationSeconds: null, width: null, height: null, providerStatus: 'unverified' as const, metadataSource: null }
+    mockedFetchAssets.mockResolvedValue({ items: [video], nextCursor: null })
+    vi.mocked(updateAsset).mockResolvedValue({ ...video, durationSeconds: 120, width: 1920, height: 1080, bytes: 123456, providerStatus: 'ready', metadataSource: 'manual' })
+    renderPage(['media.read', 'media.upload'])
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edytuj Joga' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Uzupełnij metadane filmu ręcznie' }))
+    fireEvent.change(screen.getByLabelText('Czas trwania w sekundach (opcjonalnie)'), { target: { value: '120' } })
+    fireEvent.change(screen.getByLabelText('Szerokość (opcjonalnie)'), { target: { value: '1920' } })
+    fireEvent.change(screen.getByLabelText('Wysokość (opcjonalnie)'), { target: { value: '1080' } })
+    fireEvent.change(screen.getByLabelText('Rozmiar w bajtach (opcjonalnie)'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
+
+    await waitFor(() => expect(updateAsset).toHaveBeenCalledWith(asset.id, expect.objectContaining({
+      verifyProvider: false,
+      useManualMetadata: true,
+      durationSeconds: 120,
+      width: 1920,
+      height: 1080,
+      bytes: 123456,
+    })))
+  })
+
   it('opens video upload directly in registration', async () => {
     renderPage(['media.read', 'media.upload'])
     fireEvent.click(await screen.findByRole('button', { name: 'Zarejestruj zasób' }))

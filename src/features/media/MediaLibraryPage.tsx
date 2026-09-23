@@ -28,7 +28,7 @@ export function MediaLibraryPage() {
 
   return <Box sx={{ maxWidth: 1600, p: { xs: 2, sm: 4 } }}>
     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', mb: 3 }}>
-      <Box><Typography component="h1" variant="h3">Media</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>Pliki, podgląd i metadane potwierdzone przez serwer.</Typography></Box>
+      <Box><Typography component="h1" variant="h3">Media</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>Pliki, podgląd oraz metadane pobrane od dostawcy lub świadomie uzupełnione ręcznie.</Typography></Box>
       {canUpload && <Button onClick={() => setEditor({})} startIcon={<AddOutlined />} variant="contained">Zarejestruj zasób</Button>}
     </Stack>
     <Tabs value={tab} onChange={(_, value: Kind) => changeKind(value)} aria-label="Kategorie mediów" sx={{ mb: 2 }}>
@@ -46,7 +46,7 @@ export function MediaLibraryPage() {
     </TableRow></TableHead><TableBody>{query.data.items.map((asset) => <TableRow key={asset.id}>
       <TableCell><AssetPreview asset={asset} /></TableCell>
       <TableCell><Typography sx={{ fontWeight: 700, minWidth: 160, overflowWrap: 'anywhere' }}>{asset.displayName ?? asset.externalId ?? asset.id}</Typography><Typography color="text.secondary" variant="body2">{asset.originalFileName ?? asset.id}</Typography></TableCell>
-      <TableCell><Chip size="small" color={asset.providerStatus === 'ready' ? 'success' : 'warning'} label={asset.providerStatus === 'ready' ? 'Gotowy' : 'Niezweryfikowany'} /></TableCell>
+      <TableCell><Chip size="small" color={asset.providerStatus === 'ready' ? asset.metadataSource === 'manual' ? 'warning' : 'success' : 'warning'} label={asset.providerStatus === 'ready' ? asset.metadataSource === 'manual' ? 'Gotowy — ręcznie' : 'Gotowy' : 'Niezweryfikowany'} /></TableCell>
       <TableCell>{assetKindLabels[asset.kind]}</TableCell><TableCell>{asset.provider}</TableCell><TableCell>{asset.mimeType ?? '—'}</TableCell><TableCell>{formatBytes(asset.bytes)}</TableCell>
       <TableCell>{asset.width && asset.height ? `${asset.width} × ${asset.height}` : '—'}</TableCell><TableCell>{asset.durationSeconds === null ? '—' : `${asset.durationSeconds} s`}</TableCell><TableCell>{formatDate(asset.createdAt)}</TableCell>
       {canUpload && <TableCell><Button onClick={() => setEditor({ asset })} aria-label={`Edytuj ${asset.displayName ?? asset.externalId ?? asset.id}`}>Edytuj</Button></TableCell>}

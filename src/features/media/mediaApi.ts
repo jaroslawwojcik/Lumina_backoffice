@@ -7,6 +7,7 @@ const assetSchema = z.object({
   originalFileName: z.string().nullable().optional(),
   providerStatus: z.string().optional(),
   providerLibraryId: z.string().nullable().optional(),
+  metadataSource: z.enum(['provider', 'manual']).nullable().optional(),
   id: z.string().uuid(),
   kind: assetKindSchema,
   provider: z.string().min(1),
@@ -43,6 +44,7 @@ export const registerAssetSchema = z.object({
   displayName: z.string().trim().max(200, 'Nazwa może mieć do 200 znaków.').nullable().optional(),
   providerLibraryId: z.string().trim().nullable().optional(),
   verifyProvider: z.boolean().optional(),
+  useManualMetadata: z.boolean().optional(),
   mimeType: z.string().trim().nullable().optional(),
   bytes: z.number().int().nonnegative().nullable().optional(),
   width: z.number().int().positive().nullable().optional(),
@@ -53,6 +55,16 @@ export const registerAssetSchema = z.object({
     ctx.addIssue({ code: 'custom', path: ['externalId'], message: 'Podaj identyfikator, klucz pliku lub adres URL.' })
   if (value.verifyProvider && (value.kind !== 'video' || value.provider !== 'bunny_stream' || !z.string().uuid().safeParse(value.externalId).success))
     ctx.addIssue({ code: 'custom', path: ['externalId'], message: 'Podaj identyfikator filmu Bunny w formacie UUID.' })
+  if (value.useManualMetadata) {
+    if (value.kind !== 'video' || value.provider !== 'bunny_stream' || !z.string().uuid().safeParse(value.externalId).success)
+      ctx.addIssue({ code: 'custom', path: ['externalId'], message: 'Ręczne metadane są dostępne tylko dla filmu Bunny z poprawnym UUID.' })
+    if (!value.durationSeconds || value.durationSeconds <= 0)
+      ctx.addIssue({ code: 'custom', path: ['durationSeconds'], message: 'Podaj czas trwania większy od zera.' })
+    if (!value.width || value.width <= 0)
+      ctx.addIssue({ code: 'custom', path: ['width'], message: 'Podaj szerokość większą od zera.' })
+    if (!value.height || value.height <= 0)
+      ctx.addIssue({ code: 'custom', path: ['height'], message: 'Podaj wysokość większą od zera.' })
+  }
   if (value.providerLibraryId && !/^\d+$/.test(value.providerLibraryId) && value.kind === 'video')
     ctx.addIssue({ code: 'custom', path: ['providerLibraryId'], message: 'Identyfikator biblioteki musi być liczbą.' })
   if (value.mimeType && !/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/i.test(value.mimeType))
