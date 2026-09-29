@@ -1,10 +1,11 @@
-import { ArticleOutlined, DashboardOutlined, GroupOutlined, MovieOutlined, PublishOutlined, SellOutlined, SettingsOutlined } from '@mui/icons-material'
+import { ArticleOutlined, AutoAwesomeOutlined, DashboardOutlined, GroupOutlined, MovieOutlined, PublishOutlined, SellOutlined, SettingsOutlined } from '@mui/icons-material'
 import type { SvgIconComponent } from '@mui/icons-material'
 import type { Permission } from '../auth/permissions'
 export type AppRoute = { path: string; label: string; icon: SvgIconComponent; requiredPermissions: readonly Permission[] }
 export const appRoutes: readonly AppRoute[] = [
   { path: '/', label: 'Start', icon: DashboardOutlined, requiredPermissions: [] },
   { path: '/content', label: 'Treści', icon: ArticleOutlined, requiredPermissions: ['content.read'] },
+  { path: '/assistant', label: 'Asystent treści', icon: AutoAwesomeOutlined, requiredPermissions: ['content.create'] },
   { path: '/content/sessions', label: 'Sesje', icon: ArticleOutlined, requiredPermissions: ['content.read'] },
   { path: '/content/programs', label: 'Programy', icon: ArticleOutlined, requiredPermissions: ['content.read'] },
   { path: '/content/materials', label: 'Materiały', icon: ArticleOutlined, requiredPermissions: ['content.read'] },
@@ -28,4 +29,4 @@ export const appRoutes: readonly AppRoute[] = [
   { path: '/audit', label: 'Audyt', icon: SettingsOutlined, requiredPermissions: ['audit.read'] },
 ]
 
-export const navigationRoutes = appRoutes.filter((route) => ['/', '/content', '/media', '/releases', '/commerce/products', '/users', '/staff'].includes(route.path))
+export const navigationRoutes = appRoutes.filter((route) => ['/', '/content', '/assistant', '/media', '/releases', '/commerce/products', '/users', '/staff'].includes(route.path))

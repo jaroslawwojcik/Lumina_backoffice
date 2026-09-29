@@ -4,6 +4,7 @@ import { importWithReload } from './lazyImport'
 
 export const LoginPage = lazy(() => importWithReload(() => import('../features/auth/LoginPage'), 'login').then((module) => ({ default: module.LoginPage })))
 export const ContentPage = lazy(() => importWithReload(() => import('../features/content/ContentPage'), 'content').then((module) => ({ default: module.ContentPage })))
+export const ContentAssistantPage = lazy(() => importWithReload(() => import('../features/assistant/ContentAssistantPage'), 'content-assistant').then((module) => ({ default: module.ContentAssistantPage })))
 export const CreateResourcePage = lazy(() => importWithReload(() => import('../features/content/CreateResourcePage'), 'create-resource').then((module) => ({ default: module.CreateResourcePage })))
 export const CreateProgramPage = lazy(() => importWithReload(() => import('../features/content/ProgramAuthoringPages'), 'program-authoring').then((module) => ({ default: module.CreateProgramPage })))
 export const ProgramEditorPage = lazy(() => importWithReload(() => import('../features/content/ProgramAuthoringPages'), 'program-authoring').then((module) => ({ default: module.ProgramEditorPage })))
