@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RequireAuth } from '../auth/RequireAuth'
 import { RequirePermission } from '../auth/RequirePermission'
 import { appRoutes } from './routes'
-import { AppShell, ContentAssistantPage, ContentPage, CreateProgramPage, CreateResourcePage, DashboardPage, LoginPage, MediaLibraryPage, ProductDetailPage, ProductsPage, ProgramEditorPage, ReleaseComposerPage, ReleasesPage, ResourceDetailPage, RouteBoundary, UserDetailPage, UsersPage } from './lazyPages'
+import { AppShell, ContentAssistantPage, ContentPage, CreateProgramPage, CreateResourcePage, DashboardPage, LoginPage, MediaLibraryPage, ProductDetailPage, ProductsPage, ProgramEditorPage, ReleaseComposerPage, ReleasesPage, ResourceDetailPage, RouteBoundary, TestToolsPage, UserDetailPage, UsersPage } from './lazyPages'
 import { RouteErrorPage } from './RouteErrorPage'
 
 const guardedRoutes = appRoutes.map((route) => ({
@@ -25,7 +25,8 @@ const guardedRoutes = appRoutes.map((route) => ({
                               : route.path === '/commerce/products/:productId' ? <RequirePermission requiredPermissions={route.requiredPermissions}><ProductDetailPage /></RequirePermission>
                                 : route.path === '/users' ? <RequirePermission requiredPermissions={route.requiredPermissions}><UsersPage /></RequirePermission>
                                   : route.path === '/users/:userId' ? <RequirePermission requiredPermissions={route.requiredPermissions}><UserDetailPage /></RequirePermission>
-                                    : <RequirePermission requiredPermissions={route.requiredPermissions} />,
+                                    : route.path === '/test-tools' ? <RequirePermission requiredPermissions={route.requiredPermissions}><TestToolsPage /></RequirePermission>
+                                      : <RequirePermission requiredPermissions={route.requiredPermissions} />,
 }))
 
 export const router = createBrowserRouter([

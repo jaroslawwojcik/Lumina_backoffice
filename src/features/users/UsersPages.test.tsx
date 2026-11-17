@@ -19,7 +19,7 @@ function renderPage() { const queryClient = new QueryClient({ defaultOptions: { 
 describe('UserDetailPage', () => {
   it('hides access without access.read and loads paged orders on demand', async () => {
     mockedFetchUser.mockResolvedValue({ userId, authProvider: 'firebase', authSubject: 'subject', email: 'alicja@example.test', displayName: 'Alicja Kowalska', firstName: 'Alicja', lastName: 'Kowalska', locale: 'pl-PL', timeZone: 'Europe/Warsaw', notificationsEnabled: true, theme: 'system', createdAt: '2026-09-01T08:30:00Z', updatedAt: '2026-09-10T08:30:00Z' })
-    mockedFetchUserOrders.mockResolvedValue({ items: [{ orderId: 'c0a80101-0000-7000-8000-000000000402', productId: 'c0a80101-0000-7000-8000-000000000403', productTitle: 'Tydzień spokoju', targetProgramResourceId: 'c0a80101-0000-7000-8000-000000000404', currency: 'PLN', amountInGrosze: 4990, status: 'completed', createdAt: '2026-09-01T08:30:00Z', updatedAt: '2026-09-01T08:30:00Z', completedAt: '2026-09-01T08:35:00Z', failureCode: null }], nextCursor: null })
+    mockedFetchUserOrders.mockResolvedValue({ items: [{ orderId: 'c0a80101-0000-7000-8000-000000000402', productId: 'c0a80101-0000-7000-8000-000000000403', productTitle: 'Tydzień spokoju', targetProgramResourceId: 'c0a80101-0000-7000-8000-000000000404', currency: 'PLN', amountInGrosze: 4990, status: 'completed', createdAt: '2026-09-01T08:30:00Z', updatedAt: '2026-09-01T08:30:00Z', completedAt: '2026-09-01T08:35:00Z', failureCode: null, provider: 'payu', productKind: 'course' }], nextCursor: null })
     renderPage()
     expect(await screen.findByRole('heading', { name: 'Alicja Kowalska' })).toBeInTheDocument()
     expect(screen.getByLabelText('E-mail')).toHaveAttribute('readonly')

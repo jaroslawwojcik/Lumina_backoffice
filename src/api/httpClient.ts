@@ -19,11 +19,11 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     throw new ApiError('Nie można połączyć się z API. Sprawdź adres serwera, jego uruchomienie i konfigurację CORS.', undefined, correlationId)
   }
   if (!response.ok) {
-    const problem = await response.json().catch(() => undefined) as { detail?: string; title?: string } | undefined
+    const problem = await response.json().catch(() => undefined) as { detail?: string; title?: string; type?: string } | undefined
     const message = response.status === 401 ? 'Sesja wygasła lub token pochodzi z innego projektu Firebase. Zaloguj się ponownie.'
       : response.status === 403 ? 'Konto nie ma dostępu administratora do API.'
         : problem?.detail ?? problem?.title ?? `API zwróciło błąd ${response.status}.`
-    throw new ApiError(message, response.status, correlationId)
+    throw new ApiError(message, response.status, correlationId, typeof problem?.type === 'string' ? problem.type : undefined)
   }
   return response
 }

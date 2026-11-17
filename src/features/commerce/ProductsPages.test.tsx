@@ -22,7 +22,7 @@ function renderPage() {
 
 describe('ProductDetailPage', () => {
   it('sends 49,90 as 4990 grosze and shows the API overlap error', async () => {
-    mockedFetchProduct.mockResolvedValue({ productId, targetResourceId: 'c0a80101-0000-7000-8000-000000000003', title: 'Tydzień spokoju', description: null, appleProductId: null, googleProductId: null, isActive: true, createdAt: '2026-09-01T08:30:00Z', updatedAt: '2026-09-10T08:30:00Z', prices: [] })
+    mockedFetchProduct.mockResolvedValue({ productId, kind: 'course', targetResourceId: 'c0a80101-0000-7000-8000-000000000003', entitlementKey: null, accessDurationDays: null, title: 'Tydzień spokoju', description: null, appleProductId: null, googleProductId: null, isActive: true, createdAt: '2026-09-01T08:30:00Z', updatedAt: '2026-09-10T08:30:00Z', prices: [] })
     mockedCreateProductPrice.mockRejectedValue(new ApiError('The price window overlaps an existing price of the same type.', 409))
     renderPage()
     fireEvent.click(await screen.findByRole('button', { name: 'Dodaj cenę' }))
