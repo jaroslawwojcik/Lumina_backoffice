@@ -2,17 +2,20 @@ import { AccountTreeOutlined, LogoutOutlined } from '@mui/icons-material'
 import { AppBar, Avatar, Box, Button, Chip, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography } from '@mui/material'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { environment } from '../app/environment'
-import { navigationRoutes, type AppRoute } from '../app/routes'
+import { navigationRoutes, testToolsPath, type AppRoute } from '../app/routes'
 import { hasAnyPermission } from '../auth/permissions'
 import { useAuth } from '../auth/useAuth'
+import { useTestToolsAvailability } from '../features/testTools/testToolsAvailability'
 
 const drawerWidth = { xs: 64, md: 220 }
 export function AppShell() {
   const { displayName, permissions, signOut } = useAuth()
   const location = useLocation()
+  const testToolsRoute = navigationRoutes.find((route) => route.path === testToolsPath)
+  const testToolsAvailability = useTestToolsAvailability(Boolean(testToolsRoute && hasAnyPermission(permissions, testToolsRoute.requiredPermissions)))
   const isProgram = location.pathname.startsWith('/content/programs') || (location.pathname === '/content' && new URLSearchParams(location.search).get('type') === 'program')
   const routes: AppRoute[] = navigationRoutes.flatMap((route) => route.path === '/content' ? [route, { path: '/content?type=program', label: 'Programy', icon: AccountTreeOutlined, requiredPermissions: ['content.read'] }] : [route])
-  const visibleRoutes = routes.filter((route) => hasAnyPermission(permissions, route.requiredPermissions))
+  const visibleRoutes = routes.filter((route) => hasAnyPermission(permissions, route.requiredPermissions) && (route.path !== testToolsPath || testToolsAvailability.state === 'enabled' || testToolsAvailability.state === 'error'))
   const isSelected = (path: string) => path === '/content?type=program' ? isProgram : path === '/' ? location.pathname === '/' : path === '/content' ? location.pathname.startsWith('/content') && !isProgram : location.pathname.startsWith(path)
   const active = visibleRoutes.find((route) => isSelected(route.path))
   const name = displayName ?? 'Administrator'

@@ -36,6 +36,8 @@ const resourceDetailSchema = z.object({
   accessTier: z.string(),
   defaultLocale: z.string(),
   version: z.number().int(),
+  // Additive monetization field (programs only). Absent on API versions without premium inclusion support.
+  includedInPremium: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   translation: z.object({ locale: z.string(), slug: z.string(), title: z.string(), summary: z.string().nullable(), description: z.string().nullable(), seoTitle: z.string().nullable(), seoDescription: z.string().nullable() }),
@@ -53,6 +55,7 @@ export const updateResourceSchema = z.object({
   summary: z.string().nullable(), description: z.string().nullable(), seoTitle: z.string().nullable(), seoDescription: z.string().nullable(),
   accessTier: z.enum(['free', 'premium', 'purchase']), level: z.enum(['beginner', 'intermediate', 'advanced', 'expert']).nullable(),
   estimatedDays: z.number().int().positive().nullable(), sortOrder: z.number().int().nonnegative().nullable(), featured: z.boolean().nullable(), intensity: z.string().nullable(),
+  includedInPremium: z.boolean().optional(),
 })
 export type UpdateResource = z.infer<typeof updateResourceSchema>
 

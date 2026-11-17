@@ -30,6 +30,12 @@ describe('authenticated API transport', () => {
     fetchMock.mockResolvedValue(Response.json({ title: 'Server error' }, { status }))
     await expect(apiFetch('/api/v1/admin/me')).rejects.toMatchObject({ status })
   })
+  it('exposes the ProblemDetails type so callers can tell test-tools-disabled from not-found', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ type: 'test-tools-disabled', title: 'Disabled', status: 404 }, { status: 404 }))
+    await expect(apiFetch('/api/v1/admin/test-tools/status')).rejects.toMatchObject({ status: 404, problemType: 'test-tools-disabled' })
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 404 }))
+    await expect(apiFetch('/api/v1/admin/orders/x/refund')).rejects.toMatchObject({ status: 404, problemType: undefined })
+  })
   it('reports network failure without fabricated data', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
     await expect(apiFetch('/api/v1/admin/me')).rejects.toThrow('Nie można połączyć')

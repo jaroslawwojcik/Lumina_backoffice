@@ -1,4 +1,4 @@
-import { ArticleOutlined, AutoAwesomeOutlined, DashboardOutlined, GroupOutlined, MovieOutlined, PublishOutlined, SellOutlined, SettingsOutlined } from '@mui/icons-material'
+import { ArticleOutlined, AutoAwesomeOutlined, DashboardOutlined, GroupOutlined, MovieOutlined, PublishOutlined, ScienceOutlined, SellOutlined, SettingsOutlined } from '@mui/icons-material'
 import type { SvgIconComponent } from '@mui/icons-material'
 import type { Permission } from '../auth/permissions'
 export type AppRoute = { path: string; label: string; icon: SvgIconComponent; requiredPermissions: readonly Permission[] }
@@ -27,6 +27,8 @@ export const appRoutes: readonly AppRoute[] = [
   { path: '/staff', label: 'Administracja', icon: SettingsOutlined, requiredPermissions: ['staff.manage'] },
   { path: '/staff/roles', label: 'Role', icon: SettingsOutlined, requiredPermissions: ['staff.manage'] },
   { path: '/audit', label: 'Audyt', icon: SettingsOutlined, requiredPermissions: ['audit.read'] },
+  { path: '/test-tools', label: 'Narzędzia testowe', icon: ScienceOutlined, requiredPermissions: ['testtools.use'] },
 ]
 
-export const navigationRoutes = appRoutes.filter((route) => ['/', '/content', '/assistant', '/media', '/releases', '/commerce/products', '/users', '/staff'].includes(route.path))
+export const testToolsPath = '/test-tools'
+export const navigationRoutes = appRoutes.filter((route) => ['/', '/content', '/assistant', '/media', '/releases', '/commerce/products', '/users', '/staff', testToolsPath].includes(route.path))

@@ -35,6 +35,8 @@ const programDraftSchema = z.object({
   estimatedDays: z.number().int().nullable(),
   version: z.number().int().positive().default(1),
   accessTier: accessTierSchema.default('free'),
+  // Additive monetization field; meaningful for purchase-tier programs. Absent on older API versions.
+  includedInPremium: z.boolean().optional(),
   sortOrder: z.number().int().nonnegative().default(0),
   featured: z.boolean().default(false),
   seoTitle: z.string().nullable().default(null),

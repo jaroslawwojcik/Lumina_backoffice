@@ -17,6 +17,7 @@ export const ReleaseComposerPage = lazy(() => importWithReload(() => import('../
 export const ReleasesPage = lazy(() => importWithReload(() => import('../features/releases/ReleasesPage'), 'releases').then((module) => ({ default: module.ReleasesPage })))
 export const UserDetailPage = lazy(() => importWithReload(() => import('../features/users/UsersPages'), 'users').then((module) => ({ default: module.UserDetailPage })))
 export const UsersPage = lazy(() => importWithReload(() => import('../features/users/UsersPages'), 'users').then((module) => ({ default: module.UsersPage })))
+export const TestToolsPage = lazy(() => importWithReload(() => import('../features/testTools/TestToolsPage'), 'test-tools').then((module) => ({ default: module.TestToolsPage })))
 export const AppShell = lazy(() => importWithReload(() => import('../layouts/AppShell'), 'app-shell').then((module) => ({ default: module.AppShell })))
 
 export function RouteBoundary({ children }: { children: ReactNode }) {

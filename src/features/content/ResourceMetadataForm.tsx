@@ -6,7 +6,7 @@ import { updateResource, type ResourceDetail } from './resourceApi'
 
 const optional = (value: string) => value.trim() || null
 
-type MetadataDetail = Pick<ResourceDetail, 'resourceId' | 'resourceType' | 'accessTier' | 'version' | 'translation' | 'session' | 'program'>
+type MetadataDetail = Pick<ResourceDetail, 'resourceId' | 'resourceType' | 'accessTier' | 'version' | 'translation' | 'session' | 'program' | 'includedInPremium'>
 
 export function ResourceMetadataForm({ detail }: { detail: MetadataDetail }) {
   const [title, setTitle] = useState(detail.translation.title)
@@ -21,6 +21,9 @@ export function ResourceMetadataForm({ detail }: { detail: MetadataDetail }) {
   const [sortOrder, setSortOrder] = useState(detail.program?.sortOrder?.toString() ?? '0')
   const [featured, setFeatured] = useState(detail.program?.featured ?? detail.session?.featured ?? false)
   const [intensity, setIntensity] = useState(detail.session?.intensity ?? '')
+  // Only offered when the API exposes the field, so an older API never receives a value it cannot read back.
+  const supportsPremiumInclusion = detail.resourceType === 'program' && detail.includedInPremium !== undefined
+  const [includedInPremium, setIncludedInPremium] = useState(detail.includedInPremium ?? false)
   const client = useQueryClient()
   const mutation = useMutation({ mutationFn: () => updateResource({
     resourceId: detail.resourceId, expectedVersion: detail.version, locale: detail.translation.locale,
@@ -30,6 +33,7 @@ export function ResourceMetadataForm({ detail }: { detail: MetadataDetail }) {
     sortOrder: detail.resourceType === 'program' ? Number(sortOrder) : null,
     featured: detail.resourceType === 'program' || detail.resourceType === 'session' ? featured : null,
     intensity: detail.resourceType === 'session' ? optional(intensity) : null,
+    ...(supportsPremiumInclusion ? { includedInPremium } : {}),
   }), retry: false, onSuccess: async () => {
     await Promise.all([client.invalidateQueries({ queryKey: ['resource', detail.resourceId] }), client.invalidateQueries({ queryKey: ['program-draft', detail.resourceId] }), client.invalidateQueries({ queryKey: ['resources'] })])
   } })
@@ -47,6 +51,7 @@ export function ResourceMetadataForm({ detail }: { detail: MetadataDetail }) {
     {detail.resourceType === 'program' && <><TextField select label="Poziom" value={level} onChange={(event) => setLevel(event.target.value)}><MenuItem value="">Nie określono</MenuItem><MenuItem value="beginner">Początkujący</MenuItem><MenuItem value="intermediate">Średniozaawansowany</MenuItem><MenuItem value="advanced">Zaawansowany</MenuItem><MenuItem value="expert">Ekspercki</MenuItem></TextField><TextField label="Szacowana liczba dni" type="number" value={estimatedDays} onChange={(event) => setEstimatedDays(event.target.value)} /><TextField label="Kolejność" type="number" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} /></>}
     {detail.resourceType === 'session' && <TextField label="Intensywność" value={intensity} onChange={(event) => setIntensity(event.target.value)} />}
     {(detail.resourceType === 'program' || detail.resourceType === 'session') && <FormControlLabel control={<Checkbox checked={featured} onChange={(event) => setFeatured(event.target.checked)} />} label="Wyróżnij w katalogu" />}
+    {supportsPremiumInclusion && accessTier === 'purchase' && <Box><FormControlLabel control={<Checkbox checked={includedInPremium} onChange={(event) => setIncludedInPremium(event.target.checked)} slotProps={{ input: { 'aria-describedby': 'included-in-premium-help' } }} />} label="Dostępny w ramach Premium" /><Typography color="text.secondary" id="included-in-premium-help" variant="body2">Użytkownicy z aktywną subskrypcją Premium otrzymają dostęp do programu bez osobnego zakupu. Zmiana dostępu (także poziomu dostępu) działa od razu dla opublikowanego programu, bez kolejnego wydania katalogu.</Typography></Box>}
     {mutation.isError && <Alert severity="error">Nie udało się zapisać. Jeśli ktoś zmienił treść równolegle, odśwież stronę i spróbuj ponownie.</Alert>}
     {mutation.isSuccess && <Alert severity="success">Zapisano dane katalogowe.</Alert>}
     <Box><Button disabled={!valid || mutation.isPending} startIcon={<SaveOutlined />} type="submit" variant="contained">Zapisz dane katalogowe</Button></Box>
